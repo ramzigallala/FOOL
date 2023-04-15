@@ -13,14 +13,14 @@ public class Test {
     	String fileName = "prova.fool";
 
     	CharStream chars = CharStreams.fromFileName(fileName);
-    	FOOLLexer lexer = new FOOLLexer(chars);
-    	CommonTokenStream tokens = new CommonTokenStream(lexer);
-    	FOOLParser parser = new FOOLParser(tokens);
+    	FOOLLexer lexer = new FOOLLexer(chars); //cosi effettuiamo le operazioni del lexer dandogli il flusso di caratteri
+    	CommonTokenStream tokens = new CommonTokenStream(lexer); //otteniamo un flusso di token dal lexer
+    	FOOLParser parser = new FOOLParser(tokens); //diamo i token al parser per fargli fare le sue operazioni
 
     	System.out.println("Generating ST via lexer and parser.");
-    	ParseTree st = parser.prog();
+    	ParseTree st = parser.prog(); //è la nostra variabile iniziale che richiamata fa partire il parsing
     	System.out.println("You had "+lexer.lexicalErrors+" lexical errors and "+
-    		parser.getNumberOfSyntaxErrors()+" syntax errors.\n");
+    		parser.getNumberOfSyntaxErrors()+" syntax errors.\n"); //lexicalErrors l'abbiamo definita in FOOL.g4
 
     	System.out.println("Generating AST.");
     	ASTGenerationSTVisitor visitor = new ASTGenerationSTVisitor(); // use true to visualize the ST
