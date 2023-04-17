@@ -1,6 +1,7 @@
 package svm;
 public class ExecuteVM {
-    
+    //questo è codice assembly, non è ancora codice oggetto. Infatti è ancora testuale. Ricordiamo che un codice sorgente assembly a una sintassi banale rispetto a un codice sorgente tipo java o C. Perchè ho solo una sequenza lineare di istruzioni.
+    //un assembler trasforma le istruzioni in codice oggetto, ovvero codici numerici. TODO studia i tipi di indirizzamento
     public static final int CODESIZE = 10000;
     public static final int MEMSIZE = 10000;
     

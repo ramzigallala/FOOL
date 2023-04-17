@@ -8,6 +8,7 @@ import compiler.exc.*;
 import svm.*;
 
 public class Test {
+	//implementiamo noi il dinamic binding. Per le operazioni invece ci affidiamo a java
     public static void main(String[] args) throws Exception {
    			
     	String fileName = "prova.fool";
