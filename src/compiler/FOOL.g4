@@ -10,6 +10,11 @@ gestiamo la grammatica
 Data una grammatica dobbiamo: Disambiguare la grammatica(dando priorità), eliminare la ricorsione a sinisitra e fare left factoring(si fa solo se le produzioni hanno primi caratteri comuni)(si aggiunge una variabile per le parti in comune. spiegato malissimo. lab01 minuto 2.02.00).Questo perché usiamo l'approccio TOP-down
 le variabili sono in minuscolo e.g. prog è una variabile
 E -> T + C diventa term1 : term2 PLUS term3 (PLUS match con il token definito nel parser) epsilon si fa non mettendo nulla dopo la |. term2 sarà chiamato term2(). ogni barra è un case dello switch. il PLUS sarà match(PLUS)
+ grammatica delle produzioni ottenuta per trasformazioni associative a sinistra
+ Con ANTLR4 possiamo usare il fromato esteso EBNF e quindi usare la stella di kleeni (*)
+ Con ANTLR possiamo definire la presenza opzionale di una produzione in un an'altra produzione definendolo con il "?"
+ ANTLR4 elimina lui la ricorsione a sinistra diretta se presente
+ ANTLR4 gestisce anche le grammatiche ambigue dandogli delle dichiarazioni cosi lui crea l'albero che rispetta tali dichiarazioni (ovvero priorità e associatività)
  *------------------------------------------------------------------*/
   
 prog : progbody EOF ; //EOF cosi va fino in fondo al file

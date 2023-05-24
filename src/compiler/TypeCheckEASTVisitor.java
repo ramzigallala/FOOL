@@ -77,6 +77,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 			throw new TypeException("Non boolean condition in if",n.getLine());
 		TypeNode t = visit(n.th);
 		TypeNode e = visit(n.el);
+		//ritorniamo il sopratipo cosi siamo sicuri che vada bene. es tra car e ford torno car perché cosi siamo sicuri che dentro ci va ford ma anche fiat ect.
 		if (isSubtype(t, e)) return e;
 		if (isSubtype(e, t)) return t;
 		throw new TypeException("Incompatible types in then-else branches",n.getLine());
@@ -109,7 +110,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 			throw new TypeException("Non integers in sum",n.getLine());
 		return new IntTypeNode();
 	}
-
+	//ritorno il tipo dichiarato per la funzione
 	@Override
 	public TypeNode visitNode(CallNode n) throws TypeException {
 		if (print) printNode(n,n.id);
@@ -128,7 +129,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	@Override
 	public TypeNode visitNode(IdNode n) throws TypeException {
 		if (print) printNode(n,n.id);
-		TypeNode t = visit(n.entry); 
+		TypeNode t = visit(n.entry	);
 		if (t instanceof ArrowTypeNode)
 			throw new TypeException("Wrong usage of function identifier " + n.id,n.getLine());
 		return t;

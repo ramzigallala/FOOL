@@ -28,6 +28,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
         
     @Override
 	public Node visit(ParseTree t) {
+		//serve per non bloccare tutto nel caso abbiamo un ST incompleto. Ovviamente avremo un AST incompleto
     	if (t==null) return null;
         String temp=indent;
         indent=(indent==null)?"":indent+"  ";
@@ -79,7 +80,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		n.setLine(c.EQ().getSymbol().getLine());		
         return n;		
 	}
-
+	//controllo se il campo ID di VAR è null e quindi incompleto
 	@Override
 	public Node visitVardec(VardecContext c) {
 		if (print) printVarAndProdName(c);
