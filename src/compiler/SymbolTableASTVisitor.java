@@ -9,7 +9,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	
 	private List<Map<String, STentry>> symTable = new ArrayList<>();
 	private int nestingLevel=0; // current nesting level
-	private int decOffset=-2; // counter for offset of local declarations at current nesting level 
+	private int decOffset=-2; // counter for offset of local declarations at current nesting level. before there is the return address
 	int stErrors=0;
 
 	SymbolTableASTVisitor() {}
@@ -40,7 +40,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		visit(n.exp);
 		return null;
 	}
-	
+	//l'offset delle funzioni sarà come quello delle variabili e quindi bisogna decementarlo mentre invece per i paramenti andremo a incrementarlo
 	@Override
 	public Void visitNode(FunNode n) {
 		if (print) printNode(n);
@@ -58,7 +58,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		Map<String, STentry> hmn = new HashMap<>();
 		symTable.add(hmn);
 		int prevNLDecOffset=decOffset; // stores counter for offset of declarations at previous nesting level 
-		decOffset=-2;
+		decOffset=-2; //lo resetto perché entro in un nuovo livello. dopo devo riprendere il precedente quando esco dallo scope
 		
 		int parOffset=1;
 		for (ParNode par : n.parlist)
@@ -70,7 +70,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		visit(n.exp);
 		//rimuovere la hashmap corrente poiche' esco dallo scope               
 		symTable.remove(nestingLevel--);
-		decOffset=prevNLDecOffset; // restores counter for offset of declarations at previous nesting level 
+		decOffset=prevNLDecOffset; // restores counter for offset of declarations at previous nesting level. lo faccio perché sono uscito dallo scope in cui ero e quindi riprendo lo scope precedente
 		return null;
 	}
 	

@@ -9,7 +9,9 @@ public int lexicalErrors=0;
 gestiamo la grammatica
 Data una grammatica dobbiamo: Disambiguare la grammatica(dando priorità), eliminare la ricorsione a sinisitra e fare left factoring(si fa solo se le produzioni hanno primi caratteri comuni)(si aggiunge una variabile per le parti in comune. spiegato malissimo. lab01 minuto 2.02.00).Questo perché usiamo l'approccio TOP-down
 le variabili sono in minuscolo e.g. prog è una variabile
-E -> T + C diventa term1 : term2 PLUS term3 (PLUS match con il token definito nel parser) epsilon si fa non mettendo nulla dopo la |. term2 sarà chiamato term2(). ogni barra è un case dello switch. il PLUS sarà match(PLUS)
+E -> T + C diventa term1 : term2 PLUS term3 (PLUS match con il token definito nel lexer) epsilon si fa non mettendo nulla dopo la |. term2 sarà chiamato term2(). ogni barra è un case dello switch. il PLUS sarà match(PLUS)
+ con il tag "#" do un nome alla produzione.  Questo ci aiuta a visitare i nodi
+ se ho (5+6+9) l'associatività a sinistra farà prima 5+6 e poi +9; mentre l'associatività a destra farà 6+9 e poi +5. Noi usiamo quella a sinistra
  *------------------------------------------------------------------*/
   
 prog : progbody EOF ; //EOF cosi va fino in fondo al file
@@ -42,7 +44,7 @@ exp     : exp (TIMES | DIV) exp #timesDiv
         | exp (AND | OR) exp #andOr
 	    | NOT exp #not
         | LPAR exp RPAR #pars
-    	| MINUS? NUM #integer
+    	| MINUS? NUM #integer //il ? serve per dire che è opzionale ovvero puo esserci o meno. In questo caso lo utilizziamo per gestire i numeri negativi. dopo sarà un problema di sintassi capire se è o meno un numero negativo
 	    | TRUE #true
 	    | FALSE #false
 	    | NULL #null

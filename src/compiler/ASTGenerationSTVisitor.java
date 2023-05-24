@@ -1,5 +1,10 @@
 package compiler;
-
+//genera l'AST visitando il parse tree
+//visitando l'abero posso ad esempio calcolare le espressioni 5+5+9
+//la classe che estendiamo ci viene data da ANTLR4
+//il nodo radice dell'albero è prog
+//oltre a prog per ogni # avrò un visit. il nome del metodo è visit seguito dal nome della produzione. es #ciao avrò vistciao() come metodo
+//dal parse tree generiamo l'AST. visitiamo il parse tree attraverso il patter visitor
 import java.util.*;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -25,17 +30,17 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
         	prefix=lowerizeFirstChar(extractCtxName(parentClass.getName()))+": production #";
     	System.out.println(indent+prefix+lowerizeFirstChar(extractCtxName(ctxClass.getName())));                               	
     }
-        
+	//ne abbiamo fatto l'override solo perché vogliamo iddentare il risultato cosi da vedere l'albero sintattico
     @Override
 	public Node visit(ParseTree t) {
     	if (t==null) return null;
         String temp=indent;
         indent=(indent==null)?"":indent+"  ";
-        Node result = super.visit(t);
+        Node result = super.visit(t); //per far tutto andare normale una volta calcolato l'indent
         indent=temp;
         return result; 
 	}
-
+	//prog non ha nulla quindi gli dico di vedere il figlio(nomefiglio: progbody)
 	@Override
 	public Node visitProg(ProgContext c) {
 		if (print) printVarAndProdName(c);
@@ -59,7 +64,10 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	@Override
 	public Node visitTimesDiv(TimesDivContext c) {
 		if (print) printVarAndProdName(c);
+		//c.TIMES() per vedere se è nullo oppure no
+		//la produzione con etichetta #timesDiv ha due produzioni exp e per richiamare la prima devo dargli 0 e per la seconda 1
 		Node n = new TimesNode(visit(c.exp(0)), visit(c.exp(1)));
+		//facendo l'istruzione sopra ritorno un nodo di tipo moltiplicazione che farà il primo visit * il secondo visit
 		n.setLine(c.TIMES().getSymbol().getLine());		// setLine added
         return n;		
 	}
@@ -125,6 +133,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	@Override
 	public Node visitInteger(IntegerContext c) {
 		if (print) printVarAndProdName(c);
+		//con c.NUM() prendo il numero
 		int v = Integer.parseInt(c.NUM().getText());
 		return new IntNode(c.MINUS()==null?v:-v);
 	}
@@ -161,6 +170,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	@Override
 	public Node visitPars(ParsContext c) {
 		if (print) printVarAndProdName(c);
+		//ritorno il figlio perché le parentesi non fanno calcolo e hanno un exp
 		return visit(c.exp());
 	}
 

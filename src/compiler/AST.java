@@ -111,7 +111,7 @@ public class AST {
 		final String id;
 		final List<Node> arglist;
 		STentry entry;
-		int nl;
+		int nl; //utilizzato per sapere il nesting level di dove siamo e poi prendere gli elementi all'interno ricontrollando il nesting level di nuovo
 		CallNode(String i, List<Node> p) {
 			id = i; 
 			arglist = Collections.unmodifiableList(p);
@@ -146,7 +146,7 @@ public class AST {
 		@Override
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
 	}
-	
+	//serve per il ritorno delle funzioni
 	public static class ArrowTypeNode extends TypeNode {
 		final List<TypeNode> parlist;
 		final TypeNode ret;
