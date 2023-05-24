@@ -8,6 +8,8 @@ import compiler.exc.*;
 import svm.*;
 
 public class Test {
+	//implementiamo noi il dinamic binding. Per le operazioni invece ci affidiamo a java.
+    //ANTLR4 genera il syntax tree
     public static void main(String[] args) throws Exception {
    			
     	String fileName = "prova.fool";
@@ -18,13 +20,14 @@ public class Test {
     	FOOLParser parser = new FOOLParser(tokens); //diamo i token al parser per fargli fare le sue operazioni
 
     	System.out.println("Generating ST via lexer and parser.");
-    	ParseTree st = parser.prog(); //è la nostra variabile iniziale che richiamata fa partire il parsing
+    	ParseTree st = parser.prog(); //è la nostra variabile iniziale che richiamata fa partire il parsing e ritorna la radice dell'albero
     	System.out.println("You had "+lexer.lexicalErrors+" lexical errors and "+
     		parser.getNumberOfSyntaxErrors()+" syntax errors.\n"); //lexicalErrors l'abbiamo definita in FOOL.g4
 
+		//faccio partire la visita
     	System.out.println("Generating AST.");
     	ASTGenerationSTVisitor visitor = new ASTGenerationSTVisitor(); // use true to visualize the ST
-    	Node ast = visitor.visit(st);
+    	Node ast = visitor.visit(st); //lo lancio sulla radice dell'albero che ho definito già sopra
     	System.out.println("");
 
     	System.out.println("Enriching AST via symbol table.");

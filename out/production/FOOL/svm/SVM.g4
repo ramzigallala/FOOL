@@ -9,14 +9,23 @@ public int lexicalErrors=0;
 }
    
 @parser::members { 
-public int[] code = new int[ExecuteVM.CODESIZE];    
+public int[] code = new int[ExecuteVM.CODESIZE]; //code è praticamente la lista in cui troviamo i numeri che fanno riferimento alle istruzioni
 private int i = 0;
-private Map<String,Integer> labelDef = new HashMap<>();
-private Map<Integer,String> labelRef = new HashMap<>();
+private Map<String,Integer> labelDef = new HashMap<>(); //fa il cotrario di quello sotto e quindi quando troviamo una etichetta gli diciamo a quale indirizzo fa riferimento
+private Map<Integer,String> labelRef = new HashMap<>(); // gestisce i buchi (riferimenti irrisolti) cosi quando dobiamo saltare lasciamo in buco dicendo che dovrà essere rimpito da qualcuno tipo pippo.  dopo mapperemo l'indirizzo del buco all'etichetta che andremo a mettergli sopra
+//alla fine con un for popolo i labelref utilizzando i labelDEf
 }
 
 /*------------------------------------------------------------------
  * PARSER RULES
+ costruisco l'assemblatore che preso il codice assembly lo trasforma in un codice oggetto testuale assembly, quindi leggermente più di alto livello del vero codice oggetto
+TODO imparare i tipi di indirizzamento
+assemblatore gestisce le etichette
+noi prendiamo il file compilato che finisce con estensione .svm e grzie all'assemblatore lo trasformiamo in codice oggetto
+"halt" fa uscire la virtual machine dall'esecuzione
+per fare una operazione devo prima mettere i numeri e poi l'operatore 5+7=5 7 + gli argomenti quando fai + sono impliciti
+ con questo prendiamo un file assembly e ne facciamo prima il lexer e poi il parser e infine dopo aver risolto le etichette e generiamo il codice oggetto
+ posso usare PUSH perché ho già definito le costanti nel lexer
  *------------------------------------------------------------------*/
    
 assembly: instruction* EOF 	{ for (Integer j: labelRef.keySet()) 

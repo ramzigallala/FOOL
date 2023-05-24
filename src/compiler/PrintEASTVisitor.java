@@ -3,7 +3,7 @@ package compiler;
 import compiler.AST.*;
 import compiler.lib.*;
 import compiler.exc.*;
-
+//albero di natale ovvero il AST unito con le STentry
 public class PrintEASTVisitor extends BaseEASTVisitor<Void,VoidException> {
 
 	PrintEASTVisitor() { super(false,true); } 
@@ -137,7 +137,7 @@ public class PrintEASTVisitor extends BaseEASTVisitor<Void,VoidException> {
 	
 	@Override
 	public Void visitSTentry(STentry entry) {
-		printSTentry("nestlev "+entry.nl);
+		printSTentry("nestlev "+entry.nl); //stampa il nesting level
 		printSTentry("type");
 		visit(entry.type);
 		printSTentry("offset "+entry.offset);
