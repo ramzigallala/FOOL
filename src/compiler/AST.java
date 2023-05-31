@@ -1,6 +1,8 @@
 package compiler;
 
 import java.util.*;
+import java.util.stream.Collectors;
+
 import compiler.lib.*;
 
 public class AST {
@@ -112,13 +114,35 @@ public class AST {
 		final List<Node> arglist;
 		STentry entry;
 		int nl; //utilizzato per sapere il nesting level di dove siamo e poi prendere gli elementi all'interno ricontrollando il nesting level di nuovo
-		CallNode(String i, List<Node> p) {
+		CallNode(String i, List<Node> p) {//p è arglist
 			id = i; 
 			arglist = Collections.unmodifiableList(p);
 		}
 
 		@Override
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+
+	public static class ClassCallNode extends Node {
+
+		final String objectId;
+		final String methodId;
+
+		int nestingLevel;
+		STentry symbolTableEntry;
+		STentry methodEntry;
+		final List<Node> argumentsList;
+
+		public ClassCallNode(String objectId, String methodId, List<Node> arguments) {
+			this.objectId = objectId;
+			this.methodId = methodId;
+			this.argumentsList = arguments;
+		}
+
+		@Override
+		public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+			return visitor.visitNode(this);
+		}
 	}
 	
 	public static class IdNode extends Node {
@@ -170,5 +194,145 @@ public class AST {
 		@Override
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
 	}
+
+	public static class ClassNode extends DecNode {
+
+		final String id;
+		final String superID;
+		final List<FieldNode> fields;
+		final List<MethodNode> methods;
+		STentry superClassEntry;
+		ClassTypeNode type;
+
+		public ClassNode(String id, String superID, List<FieldNode> fields, List<MethodNode> methods) {
+			this.id = id;
+			this.superID = superID;
+			this.fields = Collections.unmodifiableList(fields);
+			this.methods = Collections.unmodifiableList(methods);
+		}
+
+		@Override
+		public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+			return visitor.visitNode(this);
+		}
+	}
+
+	public static class ClassTypeNode extends TypeNode {
+
+		final List<TypeNode> allFields; //tipi dei campi, anche quelli ereditati
+		final List<ArrowTypeNode> allMethods;//tipi funzionali metodi, inclusi quelli ereditati
+
+		ClassTypeNode(List<TypeNode> allFields, List<ArrowTypeNode> allMethods) {
+			this.allFields = allFields;
+			this.allMethods = allMethods;
+		}
+
+		@Override
+		public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+			return visitor.visitNode(this);
+		}
+	}
+
+	public static class FieldNode extends DecNode {
+
+		final String id;
+		int offset;
+
+		FieldNode(String id, TypeNode type) {
+			this.id = id;
+			this.type = type;
+		}
+
+		@Override
+		public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+			return visitor.visitNode(this);
+		}
+	}
+
+	public static class MethodNode extends DecNode {
+
+		final String id;
+		final TypeNode returnType;
+		final List<ParNode> parametersList;
+		final List<DecNode> declarationsList;
+		final Node expression;
+		int offset;
+		String label;
+
+		MethodNode(String id, TypeNode returnType, List<ParNode> parametersList, List<DecNode> declarationsList, Node expression) {
+			this.id = id;
+			this.returnType = returnType;
+			this.parametersList = parametersList;
+			this.declarationsList = declarationsList;
+			this.expression = expression;
+			this.type = new ArrowTypeNode(this.parametersList.stream().map(ParNode::getType).collect(Collectors.toList()), this.returnType);
+		}
+
+		@Override
+		public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+			return visitor.visitNode(this);
+		}
+	}
+
+	public static class MethodTypeNode extends TypeNode {
+
+		final ArrowTypeNode functionalType;//è fun TODO
+
+		public MethodTypeNode( ArrowTypeNode functionalType) {
+			this.functionalType = functionalType;
+		}
+
+		@Override
+		public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+			return visitor.visitNode(this);
+		}
+	}
+
+	public static class NewNode extends Node {
+
+		STentry classSymbolTableEntry;
+		final String id;
+		List<Node> argumentsList;
+
+		NewNode(String id, List<Node> arguments) {
+			this.id = id;
+			this.argumentsList = Collections.unmodifiableList(arguments);
+		}
+
+		@Override
+		public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+			return visitor.visitNode(this);
+		}
+	}
+	//si usa quando abbiamo null
+	public static class EmptyNode extends Node {
+
+		@Override
+		public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+			return visitor.visitNode(this);
+		}
+	}
+	//lo usiamo quando facciamo typecheck per dire che è un emptyNode
+	public static class EmptyTypeNode extends TypeNode {
+
+		@Override
+		public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+			return visitor.visitNode(this);
+		}
+	}
+	//contiene l'ID della classe come campo
+	public static class RefTypeNode extends TypeNode {
+
+		final String id;
+		RefTypeNode(String id) {
+			this.id = id;
+		}
+
+		@Override
+		public <S, E extends Exception> S accept(BaseASTVisitor<S, E> visitor) throws E {
+			return visitor.visitNode(this);
+		}
+	}
+
 
 }
