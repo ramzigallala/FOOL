@@ -12,7 +12,7 @@ public class Test {
     //ANTLR4 genera il syntax tree
     public static void main(String[] args) throws Exception {
    			
-    	String fileName = "prova.fool";
+    	String fileName = "bankloan.fool";
 
     	CharStream chars = CharStreams.fromFileName(fileName);
     	FOOLLexer lexer = new FOOLLexer(chars); //cosi effettuiamo le operazioni del lexer dandogli il flusso di caratteri
@@ -34,7 +34,7 @@ public class Test {
     	SymbolTableASTVisitor symtableVisitor = new SymbolTableASTVisitor();
     	symtableVisitor.visit(ast);
     	System.out.println("You had "+symtableVisitor.stErrors+" symbol table errors.\n");
-
+/*
     	System.out.println("Visualizing Enriched AST.");
     	new PrintEASTVisitor().visit(ast);
     	System.out.println("");
@@ -79,7 +79,7 @@ public class Test {
     	System.out.println("Running generated code via Stack Virtual Machine.");
     	ExecuteVM vm = new ExecuteVM(parserASM.code);
     	vm.cpu();
-
+*/
     }
 }
 

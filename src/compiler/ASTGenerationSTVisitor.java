@@ -6,6 +6,7 @@ package compiler;
 //oltre a prog per ogni # avrò un visit. il nome del metodo è visit seguito dal nome della produzione. es #ciao avrò vistciao() come metodo
 //dal parse tree generiamo l'AST. visitiamo il parse tree attraverso il patter visitor
 import java.util.*;
+import java.util.stream.IntStream;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -60,6 +61,67 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	public Node visitNoDecProg(NoDecProgContext c) {
 		if (print) printVarAndProdName(c);
 		return new ProgNode(visit(c.exp()));
+	}
+
+	@Override
+	public Node visitCldec(CldecContext c) {
+		if (print) {
+			printVarAndProdName(c);
+		}
+		String classID = c.ID(0).getText();
+		String superID = null;
+		List<FieldNode> fields = new ArrayList<>();
+
+		if (c.EXTENDS() != null) {
+			superID = c.ID(1).getText();
+		}
+		int extendingPad = c.EXTENDS() != null ? 1 : 0;
+		IntStream.range(1 + extendingPad, c.ID().size()).forEach(i -> {
+			var field = new FieldNode(c.ID(i).getText(), (TypeNode) visit(c.type(i - (1 + extendingPad))));
+			field.setLine(c.ID(i).getSymbol().getLine());
+			fields.add(field);
+		});
+		List<MethodNode> methods = new ArrayList<>();
+		for (var method : c.methdec()) {
+			methods.add((MethodNode) visit(method));
+		}
+		var node = new ClassNode(classID, superID, fields, methods);
+		node.setLine(c.ID(0).getSymbol().getLine());
+		return node;
+	}
+
+	@Override
+	public Node visitMethdec(MethdecContext c) {
+		if (print) {
+			printVarAndProdName(c);
+		}
+		String methodId = c.ID(0).getText();
+		TypeNode returnType = (TypeNode) visit(c.type(0));
+		List<ParNode> parameters = new ArrayList<>();
+		IntStream.range(1, c.ID().size()).forEach(i -> {
+			parameters.add(new ParNode(c.ID(i).getText(), (TypeNode) visit(c.type(i))));
+		});
+		List<DecNode> declarations = new ArrayList<>();
+		for (var declaration : c.dec()) {
+			declarations.add((DecNode) visit(declaration));
+		}
+		var node = new MethodNode(methodId, returnType, parameters, declarations, visit(c.exp()));
+		node.setLine(c.ID(0).getSymbol().getLine());
+		return node;
+	}
+
+	@Override
+	public Node visitNew(NewContext c) {
+		if (print) {
+			printVarAndProdName(c);
+		}
+		List<Node> argumentsList = new ArrayList<>();
+		for (var i = 0; i < c.exp().size(); i++) {
+			argumentsList.add(visit(c.exp(i)));
+		}
+		var node = new NewNode(c.ID().getText(), argumentsList);
+		node.setLine(c.ID().getSymbol().getLine());
+		return node;
 	}
 
 	@Override
@@ -192,4 +254,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		n.setLine(c.ID().getSymbol().getLine());
 		return n;
 	}
+
+
+
 }
