@@ -53,6 +53,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	public Node visitLetInProg(LetInProgContext c) {
 		if (print) printVarAndProdName(c);
 		List<DecNode> declist = new ArrayList<>();
+		for (CldecContext classDec : c.cldec()) declist.add((DecNode) visit(classDec));
 		for (DecContext dec : c.dec()) declist.add((DecNode) visit(dec));
 		return new ProgLetInNode(declist, visit(c.exp()));
 	}
@@ -127,29 +128,78 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	@Override
 	public Node visitTimesDiv(TimesDivContext c) {
 		if (print) printVarAndProdName(c);
-		//c.TIMES() per vedere se è nullo oppure no
-		//la produzione con etichetta #timesDiv ha due produzioni exp e per richiamare la prima devo dargli 0 e per la seconda 1
-		Node n = new TimesNode(visit(c.exp(0)), visit(c.exp(1)));
-		//facendo l'istruzione sopra ritorno un nodo di tipo moltiplicazione che farà il primo visit * il secondo visit
-		n.setLine(c.TIMES().getSymbol().getLine());		// setLine added
-        return n;		
+		Node n = null;
+		if(c.TIMES()!=null){
+			//c.TIMES() per vedere se è nullo oppure no
+			//la produzione con etichetta #timesDiv ha due produzioni exp e per richiamare la prima devo dargli 0 e per la seconda 1
+			n = new TimesNode(visit(c.exp(0)), visit(c.exp(1)));
+			//facendo l'istruzione sopra ritorno un nodo di tipo moltiplicazione che farà il primo visit * il secondo visit
+			n.setLine(c.TIMES().getSymbol().getLine());		// setLine added
+		} else if (c.DIV()!=null) {
+			n = new DivNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.DIV().getSymbol().getLine());
+		}
+		return n;
 	}
 
 	@Override
 	public Node visitPlusMinus(PlusMinusContext c) {
 		if (print) printVarAndProdName(c);
-		Node n = new PlusNode(visit(c.exp(0)), visit(c.exp(1)));
-		n.setLine(c.PLUS().getSymbol().getLine());	
-        return n;		
+		Node n = null;
+		if(c.PLUS()!=null){
+			n = new PlusNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.PLUS().getSymbol().getLine());
+		} else if (c.MINUS()!=null) {
+			n = new MinusNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.MINUS().getSymbol().getLine());
+		}
+
+		return n;
 	}
 
 	@Override
 	public Node visitComp(CompContext c) {
 		if (print) printVarAndProdName(c);
-		Node n = new EqualNode(visit(c.exp(0)), visit(c.exp(1)));
-		n.setLine(c.EQ().getSymbol().getLine());		
+		Node n = null;
+		if(c.EQ() != null){
+			n = new EqualNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.EQ().getSymbol().getLine());
+		} else if (c.GE() != null) {
+			n = new GreaterEqualNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.GE().getSymbol().getLine());
+		} else if (c.LE() != null) {
+			n = new LessEqualNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.LE().getSymbol().getLine());
+		}
         return n;		
 	}
+
+	@Override
+	public Node visitAndOr(AndOrContext c) {
+		if (print) {
+			printVarAndProdName(c);
+		}
+		Node n;
+		if (c.AND() != null) {
+			n = new AndNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.AND().getSymbol().getLine());
+		} else {
+			n = new OrNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.OR().getSymbol().getLine());
+		}
+		return n;
+	}
+
+	@Override
+	public Node visitNot(NotContext c) {
+		if (print) {
+			printVarAndProdName(c);
+		}
+		Node n = new NotNode(visit(c.exp()));
+		n.setLine(c.NOT().getSymbol().getLine());
+		return n;
+	}
+
 	//controllo se il campo ID di VAR è null e quindi incompleto
 	@Override
 	public Node visitVardec(VardecContext c) {

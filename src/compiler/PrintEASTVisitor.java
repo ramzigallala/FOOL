@@ -24,6 +24,52 @@ public class PrintEASTVisitor extends BaseEASTVisitor<Void,VoidException> {
 	}
 
 	@Override
+	public Void visitNode(ClassNode node) {
+		printNode(node, node.id);
+		for (var field : node.fields) {
+			visit(field);
+		}
+		for (var method : node.methods) {
+			visit(method);
+		}
+		return null;
+	}
+
+	@Override
+	public Void visitNode(FieldNode node) {
+		printNode(node, node.id);
+		visit(node.getType());
+		return null;
+	}
+
+	@Override
+	public Void visitNode(MethodNode node) {
+		printNode(node, node.id);
+		visit(node.returnType);
+		for (ParNode parameter : node.parametersList) {
+			visit(parameter);
+		}
+		for (DecNode declaration : node.declarationsList) {
+			visit(declaration);
+		}
+		visit(node.expression);
+		return null;
+	}
+
+	@Override
+	public Void visitNode(NewNode node) {
+		printNode(node, node.id);
+		visit(node.classSymbolTableEntry);
+		return null;
+	}
+
+	@Override
+	public Void visitNode(RefTypeNode node) {
+		printNode(node, node.id);
+		return null;
+	}
+
+	@Override
 	public Void visitNode(FunNode n) {
 		printNode(n,n.id);
 		visit(n.retType);
@@ -73,10 +119,50 @@ public class PrintEASTVisitor extends BaseEASTVisitor<Void,VoidException> {
 	}
 
 	@Override
+	public Void visitNode(LessEqualNode node) {
+		printNode(node);
+		visit(node.left);
+		visit(node.right);
+		return null;
+	}
+
+	@Override
+	public Void visitNode(GreaterEqualNode node) {
+		printNode(node);
+		visit(node.left);
+		visit(node.right);
+		return null;
+	}
+
+	@Override
+	public Void visitNode(OrNode node) {
+		printNode(node);
+		visit(node.left);
+		visit(node.right);
+		return null;
+	}
+
+	@Override
+	public Void visitNode(AndNode node) {
+		printNode(node);
+		visit(node.left);
+		visit(node.right);
+		return null;
+	}
+
+	@Override
 	public Void visitNode(TimesNode n) {
 		printNode(n);
 		visit(n.left);
 		visit(n.right);
+		return null;
+	}
+
+	@Override
+	public Void visitNode(DivNode node) {
+		printNode(node);
+		visit(node.left);
+		visit(node.right);
 		return null;
 	}
 
@@ -89,10 +175,29 @@ public class PrintEASTVisitor extends BaseEASTVisitor<Void,VoidException> {
 	}
 
 	@Override
+	public Void visitNode(MinusNode node) {
+		printNode(node);
+		visit(node.left);
+		visit(node.right);
+		return null;
+	}
+
+	@Override
 	public Void visitNode(CallNode n) {
 		printNode(n,n.id+" at nestinglevel "+n.nl); 
 		visit(n.entry);
 		for (Node arg : n.arglist) visit(arg);
+		return null;
+	}
+
+	@Override
+	public Void visitNode(ClassCallNode node) {
+		printNode(node, node.objectId + "." +  node.methodId + " at nestingLevel " + node.nestingLevel);
+		visit(node.methodEntry);
+		visit(node.methodEntry);
+		for (Node argument : node.argumentsList) {
+			visit(argument);
+		}
 		return null;
 	}
 
@@ -134,7 +239,32 @@ public class PrintEASTVisitor extends BaseEASTVisitor<Void,VoidException> {
 		printNode(n);
 		return null;
 	}
-	
+
+	@Override
+	public Void visitNode(ClassTypeNode node) {
+		printNode(node);
+		for(var field : node.allFields) {
+			visit(field);
+		}
+		for (var method : node.allMethods) {
+			visit(method);
+		}
+		return null;
+	}
+
+	@Override
+	public Void visitNode(MethodTypeNode node) {
+		visit(node.functionalType);
+		return null;
+	}
+
+	@Override
+	public Void visitNode(EmptyNode node) {
+		printNode(node);
+		return null;
+	}
+
+
 	@Override
 	public Void visitSTentry(STentry entry) {
 		printSTentry("nestlev "+entry.nl); //stampa il nesting level
