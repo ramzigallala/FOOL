@@ -9,7 +9,7 @@ let
     in if b then { f(2,3) } else { false };
 in
   print (
-    if g(!(3<=10 || 5<=8))
+    if g(!(false))
       then { y }
       else { 10 }
   );

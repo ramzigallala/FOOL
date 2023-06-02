@@ -94,6 +94,95 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	}
 
 	@Override
+	public TypeNode visitNode(LessEqualNode node) throws TypeException {
+		if (print) {
+			printNode(node);
+		}
+		TypeNode left = visit(node.left);
+		TypeNode right = visit(node.right);
+		if (!(isSubtype(left, right) || isSubtype(right, left))) {
+			throw new TypeException("Incompatible types in less equal",node.getLine());
+		}
+		return new BoolTypeNode();
+	}
+
+	@Override
+	public TypeNode visitNode(GreaterEqualNode node) throws TypeException {
+		if (print) {
+			printNode(node);
+		}
+		TypeNode left = visit(node.left);
+		TypeNode right = visit(node.right);
+		if (!(isSubtype(left, right) || isSubtype(right, left))) {
+			throw new TypeException("Incompatible types in greater equal",node.getLine());
+		}
+		return new BoolTypeNode();
+	}
+
+	@Override
+	public TypeNode visitNode(OrNode node) throws TypeException {
+		if (print) {
+			printNode(node);
+		}
+		TypeNode left = visit(node.left);
+		TypeNode right = visit(node.right);
+		if (!(isSubtype(left, right) || isSubtype(right, left))) {
+			throw new TypeException("Incompatible types in OR ",node.getLine());
+		}
+		return new BoolTypeNode();
+	}
+
+	@Override
+	public TypeNode visitNode(AndNode node) throws TypeException {
+		if (print) {
+			printNode(node);
+		}
+		TypeNode left = visit(node.left);
+		TypeNode right = visit(node.right);
+		if (!(isSubtype(left, right) || isSubtype(right, left))) {
+			throw new TypeException("Incompatible types in AND",node.getLine());
+		}
+		return new BoolTypeNode();
+	}
+
+	@Override
+	public TypeNode visitNode(DivNode node) throws TypeException {
+		if (print) {
+			printNode(node);
+		}
+		if (!(isSubtype(visit(node.left), new IntTypeNode())
+				&& isSubtype(visit(node.right), new IntTypeNode()))) {
+			throw new TypeException("Non integers in division",node.getLine());
+		}
+		return new IntTypeNode();
+	}
+
+	@Override
+	public TypeNode visitNode(MinusNode node) throws TypeException {
+		if (print) {
+			printNode(node);
+		}
+		if ( !(isSubtype(visit(node.left), new IntTypeNode())
+				&& isSubtype(visit(node.right), new IntTypeNode())) ) {
+			throw new TypeException("Non integers in sub",node.getLine());
+		}
+		return new IntTypeNode();
+	}
+
+	@Override
+	public TypeNode visitNode(NotNode n) throws TypeException {
+		if (print) {
+			printNode(n);
+
+		}
+		TypeNode expressionType = visit(n.expression);
+		if (!(isSubtype(expressionType, new IntTypeNode()))) {
+			throw new TypeException("Incompatible type in not", n.getLine());
+		}
+		return new BoolTypeNode();
+	}
+
+	@Override
 	public TypeNode visitNode(TimesNode n) throws TypeException {
 		if (print) printNode(n);
 		if ( !(isSubtype(visit(n.left), new IntTypeNode())
@@ -114,8 +203,10 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	@Override
 	public TypeNode visitNode(CallNode n) throws TypeException {
 		if (print) printNode(n,n.id);
-		TypeNode t = visit(n.entry); 
-		if ( !(t instanceof ArrowTypeNode) )
+		TypeNode t = visit(n.entry);
+		if (t instanceof MethodTypeNode) {
+			t = ((MethodTypeNode) t).functionalType;
+		} else if ( !(t instanceof ArrowTypeNode) )
 			throw new TypeException("Invocation of a non-function "+n.id,n.getLine());
 		ArrowTypeNode at = (ArrowTypeNode) t;
 		if ( !(at.parlist.size() == n.arglist.size()) )
@@ -127,11 +218,74 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	}
 
 	@Override
+	public TypeNode visitNode(NewNode node) throws TypeException {
+		if (print) {
+			printNode(node, node.id);
+		}
+		//prendo la entry relativa alla classe salvata nella symbolTable. Cosi prendo allFileds della classe, definita prima, e li confornto con i parametri definiti nella sua istanziazione
+		var classFields = ((ClassTypeNode) node.classSymbolTableEntry.type).allFields;
+		//controllo che nella new non abbiamo definito il numero sbagliao di parametri
+		if (node.argumentsList.size() != classFields.size()) {
+			throw new TypeException(
+					"Wrong number of parameters for new instance of class id " + node.id,
+					node.getLine()
+			);
+		}
+		//controllo che i parametri definiti nella new siano un sottotipo dei parametri definiti nella definizione della classe
+		for (var i = 0; i < classFields.size(); i++) {
+			if (!isSubtype(visit(node.argumentsList.get(i)), classFields.get(i))) {
+				throw new TypeException(
+						"Wrong type for " + (i+1) + "-th parameter in the invocation of " + node.id,
+						node.getLine()
+				);
+			}
+		}
+		//torno il riferimento alla classe
+		return new RefTypeNode(node.id);
+	}
+
+	@Override
+	public TypeNode visitNode(EmptyNode node) {
+		if (print) {
+			printNode(node);
+		}
+		return new EmptyTypeNode();
+	}
+
+	@Override
+	public TypeNode visitNode(ClassCallNode node) throws TypeException {
+		if (print) {
+			printNode(node, node.objectId+"."+node.methodId);
+		}
+		TypeNode methodType = visit(node.methodEntry);
+		if (!(methodType instanceof MethodTypeNode)) {
+			throw new TypeException("Invocation of a non-method " + node.methodId, node.getLine());
+		}
+		ArrowTypeNode arrowType = ((MethodTypeNode) methodType).functionalType;
+		if (node.argumentsList.size() != arrowType.parlist.size()) {
+			throw new TypeException("Wrong number of parameters in the invocation of " + node.methodId, node.getLine());
+		}
+		for (var i = 0; i < node.argumentsList.size(); i++) {
+			if (!isSubtype(visit(node.argumentsList.get(i)), arrowType.parlist.get(i))) {
+				throw new TypeException(
+						"Wrong type for " + (i+1) + "-th parameter in the invocation of " + node.methodId, node.getLine()
+				);
+			}
+		}
+		return arrowType.ret;
+	}
+
+	@Override
 	public TypeNode visitNode(IdNode n) throws TypeException {
 		if (print) printNode(n,n.id);
-		TypeNode t = visit(n.entry	);
-		if (t instanceof ArrowTypeNode)
+		TypeNode t = visit(n.entry);
+		if (t instanceof ArrowTypeNode) {
 			throw new TypeException("Wrong usage of function identifier " + n.id,n.getLine());
+		}else if (t instanceof MethodTypeNode) {
+			throw new TypeException("Wrong usage of method identifier " + n.id,n.getLine());
+		} else if (t instanceof  ClassTypeNode) {
+			throw new TypeException("Wrong usage of class identifier " + n.id,n.getLine());
+		}
 		return t;
 	}
 
@@ -166,6 +320,57 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	@Override
 	public TypeNode visitNode(IntTypeNode n) {
 		if (print) printNode(n);
+		return null;
+	}
+
+	@Override
+	public TypeNode visitNode(ClassNode node) throws TypeException {
+		if (print) {
+			printNode(node, node.id);
+		}
+		for (var method : node.methods) {
+			visit(method);
+		}
+		if (node.superID != null) {
+			superType.put(node.id, node.superID);
+			var classType = node.type;
+			var parentClassType = (ClassTypeNode) node.superClassEntry.type;
+			for (var field : node.fields) {
+				int position = -field.offset-1;
+				//controllo che eventuali overriding siano corretti nei fields
+				if (position < parentClassType.allFields.size() //controllo che la posizione del field sia giusta rispetto ai fields della  super classe, classe padre
+						&& !isSubtype(classType.allFields.get(position), parentClassType.allFields.get(position))) {//controllo che l'overriding dei tipi dei field nella classe figlio siano sottotipo dei field nella classe padre
+					throw new TypeException("Wrong type for field " + field.id, field.getLine());
+				}
+			}
+			//stessa cosa che ho fatto per i field la replico per i nodi
+			for (var method : node.methods) {
+				int position = method.offset;
+				if (position < parentClassType.allMethods.size()
+						&& !isSubtype(classType.allMethods.get(position), parentClassType.allMethods.get(position))) {
+					throw new TypeException("Wrong type for method " + method.id, method.getLine());
+				}
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public TypeNode visitNode(MethodNode node) throws TypeException {
+		if (print) {
+			printNode(node, node.id);
+		}
+		for (Node declaration : node.declarationsList) {
+			try {
+				visit(declaration);
+			} catch (IncomplException e) {
+			} catch (TypeException e) {
+				System.out.println("Type checking error in a declaration: " + e.text);
+			}
+		}
+		if (!isSubtype(visit(node.expression), ckvisit(node.returnType))) {
+			throw new TypeException("Wrong return type for method " + node.id,node.getLine());
+		}
 		return null;
 	}
 
