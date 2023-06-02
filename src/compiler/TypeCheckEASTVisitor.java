@@ -110,6 +110,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	public TypeNode visitNode(GreaterEqualNode node) throws TypeException {
 		if (print) {
 			printNode(node);
+			System.out.println(node.left.getLine());
 		}
 		TypeNode left = visit(node.left);
 		TypeNode right = visit(node.right);
@@ -370,6 +371,23 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 		}
 		if (!isSubtype(visit(node.expression), ckvisit(node.returnType))) {
 			throw new TypeException("Wrong return type for method " + node.id,node.getLine());
+		}
+		return null;
+	}
+
+	@Override
+	public TypeNode visitNode(MethodTypeNode node) throws TypeException {
+		if (print) {
+			printNode(node);
+		}
+		visit(node.functionalType);
+		return null;
+	}
+
+	@Override
+	public TypeNode visitNode(RefTypeNode node) {
+		if (print) {
+			printNode(node);
 		}
 		return null;
 	}
