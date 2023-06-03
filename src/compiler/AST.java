@@ -346,7 +346,7 @@ public class AST {
 	public static class FieldNode extends DecNode {
 
 		final String id;
-		int offset;
+		int offset; //inserito per rendere più efficiente il type checking
 
 		FieldNode(String id, TypeNode type) {
 			this.id = id;

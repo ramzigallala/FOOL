@@ -334,10 +334,11 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 		if (node.superID != null) {
 			superType.put(node.id, node.superID);
 			var classType = node.type;
-			var parentClassType = (ClassTypeNode) node.superClassEntry.type;
+			var parentClassType = (ClassTypeNode) node.superClassEntry.type; //utilizzato per rendere più efficiente il type checking
 			for (var field : node.fields) {
 				int position = -field.offset-1;
-				//controllo che eventuali overriding siano corretti nei fields
+				//controllo che eventuali overriding siano corretti nei fields.
+				//aggiunto nelle ottimizzazioni
 				if (position < parentClassType.allFields.size() //controllo che la posizione del field sia giusta rispetto ai fields della  super classe, classe padre
 						&& !isSubtype(classType.allFields.get(position), parentClassType.allFields.get(position))) {//controllo che l'overriding dei tipi dei field nella classe figlio siano sottotipo dei field nella classe padre
 					throw new TypeException("Wrong type for field " + field.id, field.getLine());

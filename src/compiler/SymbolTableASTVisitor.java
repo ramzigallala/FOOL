@@ -12,7 +12,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	private int nestingLevel=0; // current nesting level
 	private int decOffset=-2; // counter for offset of local declarations at current nesting level. before there is the return address
 	int stErrors=0;
-	Set<String> onClassVisitScope;
+	Set<String> onClassVisitScope; //Rende possibile rilevare la ridefinizione(erronea) di campi e metodi con stesso nome effettuata all'interno della stessa classe
 
 	SymbolTableASTVisitor() {}
 	SymbolTableASTVisitor(boolean debug) {super(debug);} // enables print for debugging
@@ -276,7 +276,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		 * Table should be added for both symbol table and class table.
 		 */
 		nestingLevel++;
-		onClassVisitScope = new HashSet<>();
+		onClassVisitScope = new HashSet<>(); //spiegata in riga 15
 		//la virtual table contiene tutte le entry STentry dentro la classe. esempio pag 21
 		Map<String, STentry> virtualTable = new HashMap<>();
 		//copiamo la virtual table relativa al nome della super classe. quindi quella da cui eredita
@@ -301,7 +301,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		 */
 
 		for (var field : node.fields) {
-			if (onClassVisitScope.contains(field.id)) {
+			if (onClassVisitScope.contains(field.id)) { //effettuo il controllo per i campi. spiegato a linea 15 il motivo
 				System.out.println(
 						"Field with id " + field.id + " on line " + field.getLine() + " was already declared"
 				);
@@ -329,7 +329,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 			 * Add field id in symbol(virtual) table
 			 */
 			virtualTable.put(field.id, fieldEntry);
-			field.offset = fieldEntry.offset;
+			field.offset = fieldEntry.offset; //inserito per migliorare efficienza del type checking
 		}
 		int currentDecOffset = decOffset;
 		// method declarationOffset starts from 0
@@ -341,7 +341,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 			decOffset = ((ClassTypeNode) symTable.get(0).get(node.superID).type).allMethods.size();
 		}
 		for (var method : node.methods) {
-			if (onClassVisitScope.contains(method.id)) {
+			if (onClassVisitScope.contains(method.id)) { //effettuo il controllo per i metodi anche. Motivo come per i campi spiegato a linea 15
 				System.out.println(
 						"Method with id " + method.id + " on line " + method.getLine() + " was already declared"
 				);
