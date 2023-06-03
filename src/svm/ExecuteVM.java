@@ -18,7 +18,7 @@ public class ExecuteVM {
     
     private int hp = 0;       //heap pointer
     private int fp = MEMSIZE;  //frame pointer
-    private int ra;           //return adress
+    private int ra;           //return address
     private int tm;           //temporary storage
     
     public ExecuteVM(int[] code) {

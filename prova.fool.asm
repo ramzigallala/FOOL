@@ -3,25 +3,23 @@ push 5
 push 2
 add
 push function1
+push 10
 lfp
-push 1
-lfp
-stm
-ltm
-ltm
-push -3
+push -2
 add
 lw
-js
+bleq label6
+push 1
+b label7
+label6:
+push 0
+label7:
 push 1
 beq label4
 push 10
 b label5
 label4:
-lfp
-push -2
-add
-lw
+push 5
 label5:
 print
 halt

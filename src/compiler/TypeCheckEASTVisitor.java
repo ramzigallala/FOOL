@@ -110,7 +110,6 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	public TypeNode visitNode(GreaterEqualNode node) throws TypeException {
 		if (print) {
 			printNode(node);
-			System.out.println(node.left.getLine());
 		}
 		TypeNode left = visit(node.left);
 		TypeNode right = visit(node.right);
