@@ -24,12 +24,12 @@ public class PrintEASTVisitor extends BaseEASTVisitor<Void,VoidException> {
 	}
 
 	@Override
-	public Void visitNode(ClassNode node) {
-		printNode(node, node.id);
-		for (var field : node.fields) {
+	public Void visitNode(ClassNode n) {
+		printNode(n, n.id);
+		for (var field : n.fields) {
 			visit(field);
 		}
-		for (var method : node.methods) {
+		for (var method : n.methods) {
 			visit(method);
 		}
 		return null;
@@ -43,29 +43,29 @@ public class PrintEASTVisitor extends BaseEASTVisitor<Void,VoidException> {
 	}
 
 	@Override
-	public Void visitNode(MethodNode node) {
-		printNode(node, node.id);
-		visit(node.retType);
-		for (ParNode parameter : node.parList) {
+	public Void visitNode(MethodNode n) {
+		printNode(n, n.id);
+		visit(n.retType);
+		for (ParNode parameter : n.parList) {
 			visit(parameter);
 		}
-		for (DecNode declaration : node.decList) {
+		for (DecNode declaration : n.decList) {
 			visit(declaration);
 		}
-		visit(node.exp);
+		visit(n.exp);
 		return null;
 	}
 
 	@Override
-	public Void visitNode(NewNode node) {
-		printNode(node, node.id);
-		visit(node.classEntry);
+	public Void visitNode(NewNode n) {
+		printNode(n, n.id);
+		visit(n.classEntry);
 		return null;
 	}
 
 	@Override
-	public Void visitNode(RefTypeNode node) {
-		printNode(node, node.id);
+	public Void visitNode(RefTypeNode n) {
+		printNode(n, n.id);
 		return null;
 	}
 
@@ -119,34 +119,34 @@ public class PrintEASTVisitor extends BaseEASTVisitor<Void,VoidException> {
 	}
 
 	@Override
-	public Void visitNode(LessEqualNode node) {
-		printNode(node);
-		visit(node.left);
-		visit(node.right);
+	public Void visitNode(LessEqualNode n) {
+		printNode(n);
+		visit(n.left);
+		visit(n.right);
 		return null;
 	}
 
 	@Override
-	public Void visitNode(GreaterEqualNode node) {
-		printNode(node);
-		visit(node.left);
-		visit(node.right);
+	public Void visitNode(GreaterEqualNode n) {
+		printNode(n);
+		visit(n.left);
+		visit(n.right);
 		return null;
 	}
 
 	@Override
-	public Void visitNode(OrNode node) {
-		printNode(node);
-		visit(node.left);
-		visit(node.right);
+	public Void visitNode(OrNode n) {
+		printNode(n);
+		visit(n.left);
+		visit(n.right);
 		return null;
 	}
 
 	@Override
-	public Void visitNode(AndNode node) {
-		printNode(node);
-		visit(node.left);
-		visit(node.right);
+	public Void visitNode(AndNode n) {
+		printNode(n);
+		visit(n.left);
+		visit(n.right);
 		return null;
 	}
 
@@ -159,10 +159,10 @@ public class PrintEASTVisitor extends BaseEASTVisitor<Void,VoidException> {
 	}
 
 	@Override
-	public Void visitNode(DivNode node) {
-		printNode(node);
-		visit(node.left);
-		visit(node.right);
+	public Void visitNode(DivNode n) {
+		printNode(n);
+		visit(n.left);
+		visit(n.right);
 		return null;
 	}
 
@@ -175,10 +175,10 @@ public class PrintEASTVisitor extends BaseEASTVisitor<Void,VoidException> {
 	}
 
 	@Override
-	public Void visitNode(MinusNode node) {
-		printNode(node);
-		visit(node.left);
-		visit(node.right);
+	public Void visitNode(MinusNode n) {
+		printNode(n);
+		visit(n.left);
+		visit(n.right);
 		return null;
 	}
 
@@ -241,33 +241,33 @@ public class PrintEASTVisitor extends BaseEASTVisitor<Void,VoidException> {
 	}
 
 	@Override
-	public Void visitNode(ClassTypeNode node) {
-		printNode(node);
-		for(var field : node.allFields) {
+	public Void visitNode(ClassTypeNode n) {
+		printNode(n);
+		for(var field : n.allFields) {
 			visit(field);
 		}
-		for (var method : node.allMethods) {
+		for (var method : n.allMethods) {
 			visit(method);
 		}
 		return null;
 	}
 
 	@Override
-	public Void visitNode(MethodTypeNode node) {
-		visit(node.fun);
+	public Void visitNode(MethodTypeNode n) {
+		visit(n.fun);
 		return null;
 	}
 
 	@Override
-	public Void visitNode(EmptyNode node) {
-		printNode(node);
+	public Void visitNode(EmptyNode n) {
+		printNode(n);
 		return null;
 	}
 
 	@Override
-	public Void visitNode(NotNode node) {
-		printNode(node);
-		visit(node.exp);
+	public Void visitNode(NotNode n) {
+		printNode(n);
+		visit(n.exp);
 		return null;
 	}
 

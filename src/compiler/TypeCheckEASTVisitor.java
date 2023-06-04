@@ -95,77 +95,77 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	}
 
 	@Override
-	public TypeNode visitNode(LessEqualNode node) throws TypeException {
+	public TypeNode visitNode(LessEqualNode n) throws TypeException {
 		if (print) {
-			printNode(node);
+			printNode(n);
 		}
-		TypeNode left = visit(node.left);
-		TypeNode right = visit(node.right);
+		TypeNode left = visit(n.left);
+		TypeNode right = visit(n.right);
 		if (!(isSubtype(left, right) || isSubtype(right, left))) {
-			throw new TypeException("Incompatible types in less equal",node.getLine());
+			throw new TypeException("Incompatible types in less equal",n.getLine());
 		}
 		return new BoolTypeNode();
 	}
 
 	@Override
-	public TypeNode visitNode(GreaterEqualNode node) throws TypeException {
+	public TypeNode visitNode(GreaterEqualNode n) throws TypeException {
 		if (print) {
-			printNode(node);
+			printNode(n);
 		}
-		TypeNode left = visit(node.left);
-		TypeNode right = visit(node.right);
+		TypeNode left = visit(n.left);
+		TypeNode right = visit(n.right);
 		if (!(isSubtype(left, right) || isSubtype(right, left))) {
-			throw new TypeException("Incompatible types in greater equal",node.getLine());
+			throw new TypeException("Incompatible types in greater equal",n.getLine());
 		}
 		return new BoolTypeNode();
 	}
 
 	@Override
-	public TypeNode visitNode(OrNode node) throws TypeException {
+	public TypeNode visitNode(OrNode n) throws TypeException {
 		if (print) {
-			printNode(node);
+			printNode(n);
 		}
-		TypeNode left = visit(node.left);
-		TypeNode right = visit(node.right);
+		TypeNode left = visit(n.left);
+		TypeNode right = visit(n.right);
 		if (!(isSubtype(left, right) || isSubtype(right, left))) {
-			throw new TypeException("Incompatible types in OR ",node.getLine());
+			throw new TypeException("Incompatible types in OR ",n.getLine());
 		}
 		return new BoolTypeNode();
 	}
 
 	@Override
-	public TypeNode visitNode(AndNode node) throws TypeException {
+	public TypeNode visitNode(AndNode n) throws TypeException {
 		if (print) {
-			printNode(node);
+			printNode(n);
 		}
-		TypeNode left = visit(node.left);
-		TypeNode right = visit(node.right);
+		TypeNode left = visit(n.left);
+		TypeNode right = visit(n.right);
 		if (!(isSubtype(left, right) || isSubtype(right, left))) {
-			throw new TypeException("Incompatible types in AND",node.getLine());
+			throw new TypeException("Incompatible types in AND",n.getLine());
 		}
 		return new BoolTypeNode();
 	}
 
 	@Override
-	public TypeNode visitNode(DivNode node) throws TypeException {
+	public TypeNode visitNode(DivNode n) throws TypeException {
 		if (print) {
-			printNode(node);
+			printNode(n);
 		}
-		if (!(isSubtype(visit(node.left), new IntTypeNode())
-				&& isSubtype(visit(node.right), new IntTypeNode()))) {
-			throw new TypeException("Non integers in division",node.getLine());
+		if (!(isSubtype(visit(n.left), new IntTypeNode())
+				&& isSubtype(visit(n.right), new IntTypeNode()))) {
+			throw new TypeException("Non integers in division",n.getLine());
 		}
 		return new IntTypeNode();
 	}
 
 	@Override
-	public TypeNode visitNode(MinusNode node) throws TypeException {
+	public TypeNode visitNode(MinusNode n) throws TypeException {
 		if (print) {
-			printNode(node);
+			printNode(n);
 		}
-		if ( !(isSubtype(visit(node.left), new IntTypeNode())
-				&& isSubtype(visit(node.right), new IntTypeNode())) ) {
-			throw new TypeException("Non integers in sub",node.getLine());
+		if ( !(isSubtype(visit(n.left), new IntTypeNode())
+				&& isSubtype(visit(n.right), new IntTypeNode())) ) {
+			throw new TypeException("Non integers in sub",n.getLine());
 		}
 		return new IntTypeNode();
 	}
@@ -249,9 +249,9 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	}
 
 	@Override
-	public TypeNode visitNode(EmptyNode node) {
+	public TypeNode visitNode(EmptyNode n) {
 		if (print) {
-			printNode(node);
+			printNode(n);
 		}
 		return new EmptyTypeNode();
 	}
@@ -329,17 +329,17 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	}
 
 	@Override
-	public TypeNode visitNode(ClassNode node) throws TypeException {
+	public TypeNode visitNode(ClassNode n) throws TypeException {
 		if (print) {
-			printNode(node, node.id);
+			printNode(n, n.id);
 		}
 
 		//eredito
-		if (node.superID != null) {
-			superType.put(node.id, node.superID); //aggiorno la mappa
-			ClassTypeNode classType = node.type;
-			ClassTypeNode parentClassType = (ClassTypeNode) node.superClassEntry.type; //utilizzato per rendere più efficiente il type checking
-			for (var field : node.fields) {
+		if (n.superID != null) {
+			superType.put(n.id, n.superID); //aggiorno la mappa
+			ClassTypeNode classType = n.type;
+			ClassTypeNode parentClassType = (ClassTypeNode) n.superClassEntry.type; //utilizzato per rendere più efficiente il type checking
+			for (var field : n.fields) {
 				int position = -field.offset-1;
 				//controllo che eventuali overriding siano corretti nei fields.
 				//aggiunto nelle ottimizzazioni
@@ -349,7 +349,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 				}
 			}
 			//stessa cosa che ho fatto per i field la replico per i nodi metodo
-			for (var method : node.methods) {
+			for (var method : n.methods) {
 				int position = method.offset;
 				if (position < parentClassType.allMethods.size()
 						&& !isSubtype(classType.allMethods.get(position), parentClassType.allMethods.get(position))) {
@@ -359,7 +359,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 		}else{
 			//non eredito
 			//visito i metodi della classe per vedere se vanno bene
-			for (var method : node.methods) {
+			for (var method : n.methods) {
 				visit(method);
 			}
 		}
@@ -367,11 +367,11 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	}
 
 	@Override
-	public TypeNode visitNode(MethodNode node) throws TypeException {
+	public TypeNode visitNode(MethodNode n) throws TypeException {
 		if (print) {
-			printNode(node, node.id);
+			printNode(n, n.id);
 		}
-		for (Node dec : node.decList) {
+		for (Node dec : n.decList) {
 			try {
 				//visito le dichiarazioni dei metodi per vedere se vanno bene
 				visit(dec);
@@ -381,18 +381,18 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 			}
 		}
 		//controllo se il tipo del risultato della espressione e un sotto tipo del ritorno
-		if (!isSubtype(visit(node.exp), ckvisit(node.retType))) {
-			throw new TypeException("Wrong return type for method " + node.id,node.getLine());
+		if (!isSubtype(visit(n.exp), ckvisit(n.retType))) {
+			throw new TypeException("Wrong return type for method " + n.id,n.getLine());
 		}
 		return null;
 	}
 
 	@Override
-	public TypeNode visitNode(MethodTypeNode node) throws TypeException {
+	public TypeNode visitNode(MethodTypeNode n) throws TypeException {
 		if (print) {
-			printNode(node);
+			printNode(n);
 		}
-		visit(node.fun);
+		visit(n.fun);
 		return null;
 	}
 
