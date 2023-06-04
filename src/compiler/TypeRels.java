@@ -37,25 +37,28 @@ public class TypeRels {
 	public static TypeNode lowestCommonAncestor(TypeNode a, TypeNode b) {
 		if (a instanceof RefTypeNode && b instanceof RefTypeNode
 				|| a instanceof EmptyTypeNode || b instanceof EmptyTypeNode) {
-			if (a instanceof EmptyTypeNode) {
-				return b;
-			} else if (b instanceof EmptyTypeNode) {
-				return a;
-			}
+
+			if (a instanceof EmptyTypeNode) return b;
+			if (b instanceof EmptyTypeNode) return a;
+
+			//all'inizio consideriamo la classe a. se questa non ha lo stesso tipo cerchiamo risalendo una classe che faccia in modo che b sia sottotipo
 			if (((RefTypeNode) a).id.equals(((RefTypeNode) b).id)) {
 				return a;
 			}
+			//con questo while cerchiamo un tipo che sia sottotipo sia di a che di b
 			String type = superType.get(((RefTypeNode) a).id);
 			while(type != null && isSubtype(b, new RefTypeNode(type))) {
 				type = superType.get(type);
 			}
 			return type != null ? new RefTypeNode(type) : null;
-		} else if ((a instanceof BoolTypeNode || a instanceof IntTypeNode)
-				&& (b instanceof BoolTypeNode || b instanceof IntTypeNode)) {
-			if (a instanceof IntTypeNode || b instanceof IntTypeNode) {
+		}
+		//caso in cui trattiamo intTypeNode e BoolTypeNode
+		if (isSubtype(a, new IntTypeNode()) && isSubtype(b, new IntTypeNode())){
+			if (a instanceof IntTypeNode || b instanceof IntTypeNode){
 				return new IntTypeNode();
+			} else {
+				return new BoolTypeNode();
 			}
-			return new BoolTypeNode();
 		}
 		return null;
 	}
