@@ -21,6 +21,7 @@ public class TypeRels {
 			}
 			return ((RefTypeNode) a).id.equals(((RefTypeNode) b).id) || directSuperType != null;
 		}
+
 		if (a instanceof ArrowTypeNode && b instanceof ArrowTypeNode) {
 			return isSubtype(((ArrowTypeNode) a).ret, ((ArrowTypeNode) b).ret) && //valuto la relazione di co varianza sul ritorno
 					IntStream.range(0, ((ArrowTypeNode) a).parlist.size())//valuto la contro varianza sul tipo dei parametri
@@ -35,8 +36,17 @@ public class TypeRels {
 	}
 
 	public static TypeNode lowestCommonAncestor(TypeNode a, TypeNode b) {
-		if (a instanceof RefTypeNode && b instanceof RefTypeNode
-				|| a instanceof EmptyTypeNode || b instanceof EmptyTypeNode) {
+		//caso in cui trattiamo intTypeNode e BoolTypeNode
+		if (isSubtype(a, new IntTypeNode()) && isSubtype(b, new IntTypeNode())){
+			if (a instanceof IntTypeNode || b instanceof IntTypeNode){
+				return new IntTypeNode();
+			} else {
+				return new BoolTypeNode();
+			}
+		}
+
+		if ((a instanceof RefTypeNode || a instanceof EmptyTypeNode)
+				&& (b instanceof RefTypeNode || b instanceof EmptyTypeNode)) {
 
 			if (a instanceof EmptyTypeNode) return b;
 			if (b instanceof EmptyTypeNode) return a;
@@ -46,20 +56,14 @@ public class TypeRels {
 				return a;
 			}
 			//con questo while cerchiamo un tipo che sia sottotipo sia di a che di b
+			//quindi cerchiamo un tipo (una classe) da cui derivano le due classi
 			String type = superType.get(((RefTypeNode) a).id);
 			while(type != null && isSubtype(b, new RefTypeNode(type))) {
 				type = superType.get(type);
 			}
 			return type != null ? new RefTypeNode(type) : null;
 		}
-		//caso in cui trattiamo intTypeNode e BoolTypeNode
-		if (isSubtype(a, new IntTypeNode()) && isSubtype(b, new IntTypeNode())){
-			if (a instanceof IntTypeNode || b instanceof IntTypeNode){
-				return new IntTypeNode();
-			} else {
-				return new BoolTypeNode();
-			}
-		}
+
 		return null;
 	}
 

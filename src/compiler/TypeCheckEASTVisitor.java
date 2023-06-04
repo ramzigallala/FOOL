@@ -176,7 +176,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 			printNode(n);
 
 		}
-		TypeNode expressionType = visit(n.expression);
+		TypeNode expressionType = visit(n.exp);
 		if (!(isSubtype(expressionType, new IntTypeNode()))) {
 			throw new TypeException("Incompatible type in not", n.getLine());
 		}
@@ -205,13 +205,17 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	public TypeNode visitNode(CallNode n) throws TypeException {
 		if (print) printNode(n,n.id);
 		TypeNode t = visit(n.entry);
+		//nel caso in cui sia methodTypeNode allore prendo il tipo della funzione
 		if (t instanceof MethodTypeNode) {
-			t = ((MethodTypeNode) t).functionalType;
+			t = ((MethodTypeNode) t).fun;
 		} else if ( !(t instanceof ArrowTypeNode) )
 			throw new TypeException("Invocation of a non-function "+n.id,n.getLine());
+
 		ArrowTypeNode at = (ArrowTypeNode) t;
+		//da qui in poi uguale
 		if ( !(at.parlist.size() == n.arglist.size()) )
 			throw new TypeException("Wrong number of parameters in the invocation of "+n.id,n.getLine());
+
 		for (int i = 0; i < n.arglist.size(); i++)
 			if ( !(isSubtype(visit(n.arglist.get(i)),at.parlist.get(i))) )
 				throw new TypeException("Wrong type for "+(i+1)+"-th parameter in the invocation of "+n.id,n.getLine());
@@ -219,30 +223,29 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	}
 
 	@Override
-	public TypeNode visitNode(NewNode node) throws TypeException {
+	public TypeNode visitNode(NewNode n) throws TypeException {
 		if (print) {
-			printNode(node, node.id);
+			printNode(n, n.id);
 		}
-		//prendo la entry relativa alla classe salvata nella symbolTable. Cosi prendo allFileds della classe, definita prima, e li confornto con i parametri definiti nella sua istanziazione
-		var classFields = ((ClassTypeNode) node.classSymbolTableEntry.type).allFields;
-		//controllo che nella new non abbiamo definito il numero sbagliao di parametri
-		if (node.argumentsList.size() != classFields.size()) {
+		//prendo la entry relativa alla classe salvata nella symbolTable. QUindi quello che fa il metodo è: prendo allFileds della classe, definita prima, e li confornto con i parametri definiti nella sua istanziazione
+		var classFields = ((ClassTypeNode) n.classEntry.type).allFields;
+		//controllo che nella new non abbiamo definito il numero sbagliato di parametri
+		if (n.argList.size() != classFields.size()) {
 			throw new TypeException(
-					"Wrong number of parameters for new instance of class id " + node.id,
-					node.getLine()
+					"Wrong number of parameters for new instance of class id " + n.id, n.getLine()
 			);
 		}
 		//controllo che i parametri definiti nella new siano un sottotipo dei parametri definiti nella definizione della classe
 		for (var i = 0; i < classFields.size(); i++) {
-			if (!isSubtype(visit(node.argumentsList.get(i)), classFields.get(i))) {
+			if (!isSubtype(visit(n.argList.get(i)), classFields.get(i))) {
 				throw new TypeException(
-						"Wrong type for " + (i+1) + "-th parameter in the invocation of " + node.id,
-						node.getLine()
+						"Wrong type for " + (i+1) + "-th parameter in the invocation of " + n.id,
+						n.getLine()
 				);
 			}
 		}
 		//torno il riferimento alla classe
-		return new RefTypeNode(node.id);
+		return new RefTypeNode(n.id);
 	}
 
 	@Override
@@ -258,22 +261,23 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 		if (print) {
 			printNode(node, node.objectId+"."+node.methodId);
 		}
+		//come callNode
 		TypeNode methodType = visit(node.methodEntry);
 		if (!(methodType instanceof MethodTypeNode)) {
 			throw new TypeException("Invocation of a non-method " + node.methodId, node.getLine());
 		}
-		ArrowTypeNode arrowType = ((MethodTypeNode) methodType).functionalType;
-		if (node.argumentsList.size() != arrowType.parlist.size()) {
+		ArrowTypeNode at = ((MethodTypeNode) methodType).fun;
+		if (!(at.parlist.size() == node.argList.size())) {
 			throw new TypeException("Wrong number of parameters in the invocation of " + node.methodId, node.getLine());
 		}
-		for (var i = 0; i < node.argumentsList.size(); i++) {
-			if (!isSubtype(visit(node.argumentsList.get(i)), arrowType.parlist.get(i))) {
+		for (var i = 0; i < node.argList.size(); i++) {
+			if (!isSubtype(visit(node.argList.get(i)), at.parlist.get(i))) {
 				throw new TypeException(
 						"Wrong type for " + (i+1) + "-th parameter in the invocation of " + node.methodId, node.getLine()
 				);
 			}
 		}
-		return arrowType.ret;
+		return at.ret;
 	}
 
 	@Override
@@ -329,29 +333,34 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 		if (print) {
 			printNode(node, node.id);
 		}
-		for (var method : node.methods) {
-			visit(method);
-		}
+
+		//eredito
 		if (node.superID != null) {
-			superType.put(node.id, node.superID);
-			var classType = node.type;
-			var parentClassType = (ClassTypeNode) node.superClassEntry.type; //utilizzato per rendere più efficiente il type checking
+			superType.put(node.id, node.superID); //aggiorno la mappa
+			ClassTypeNode classType = node.type;
+			ClassTypeNode parentClassType = (ClassTypeNode) node.superClassEntry.type; //utilizzato per rendere più efficiente il type checking
 			for (var field : node.fields) {
 				int position = -field.offset-1;
 				//controllo che eventuali overriding siano corretti nei fields.
 				//aggiunto nelle ottimizzazioni
-				if (position < parentClassType.allFields.size() //controllo che la posizione del field sia giusta rispetto ai fields della  super classe, classe padre
+				if (position < parentClassType.allFields.size() //controllo che stiamo lavorando nei fields della super classe. Quindi per essere sicuro che faccio override
 						&& !isSubtype(classType.allFields.get(position), parentClassType.allFields.get(position))) {//controllo che l'overriding dei tipi dei field nella classe figlio siano sottotipo dei field nella classe padre
 					throw new TypeException("Wrong type for field " + field.id, field.getLine());
 				}
 			}
-			//stessa cosa che ho fatto per i field la replico per i nodi
+			//stessa cosa che ho fatto per i field la replico per i nodi metodo
 			for (var method : node.methods) {
 				int position = method.offset;
 				if (position < parentClassType.allMethods.size()
 						&& !isSubtype(classType.allMethods.get(position), parentClassType.allMethods.get(position))) {
 					throw new TypeException("Wrong type for method " + method.id, method.getLine());
 				}
+			}
+		}else{
+			//non eredito
+			//visito i metodi della classe per vedere se vanno bene
+			for (var method : node.methods) {
+				visit(method);
 			}
 		}
 		return null;
@@ -362,15 +371,17 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 		if (print) {
 			printNode(node, node.id);
 		}
-		for (Node declaration : node.declarationsList) {
+		for (Node dec : node.decList) {
 			try {
-				visit(declaration);
+				//visito le dichiarazioni dei metodi per vedere se vanno bene
+				visit(dec);
 			} catch (IncomplException e) {
 			} catch (TypeException e) {
 				System.out.println("Type checking error in a declaration: " + e.text);
 			}
 		}
-		if (!isSubtype(visit(node.expression), ckvisit(node.returnType))) {
+		//controllo se il tipo del risultato della espressione e un sotto tipo del ritorno
+		if (!isSubtype(visit(node.exp), ckvisit(node.retType))) {
 			throw new TypeException("Wrong return type for method " + node.id,node.getLine());
 		}
 		return null;
@@ -381,7 +392,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 		if (print) {
 			printNode(node);
 		}
-		visit(node.functionalType);
+		visit(node.fun);
 		return null;
 	}
 

@@ -96,9 +96,9 @@ public class AST {
 		final Node left;
 		final Node right;
 
-		GreaterEqualNode(Node left, Node right) {
-			this.left = left;
-			this.right = right;
+		GreaterEqualNode(Node l, Node r) {
+			this.left = l;
+			this.right = r;
 		}
 
 		@Override
@@ -112,9 +112,9 @@ public class AST {
 		final Node left;
 		final Node right;
 
-		LessEqualNode(Node left, Node right) {
-			this.left = left;
-			this.right = right;
+		LessEqualNode(Node l, Node r) {
+			this.left = l;
+			this.right = r;
 		}
 
 		@Override
@@ -128,9 +128,9 @@ public class AST {
 		final Node left;
 		final Node right;
 
-		OrNode(Node left, Node right) {
-			this.left = left;
-			this.right = right;
+		OrNode(Node l, Node r) {
+			this.left = l;
+			this.right = r;
 		}
 
 		@Override
@@ -144,9 +144,9 @@ public class AST {
 		final Node left;
 		final Node right;
 
-		AndNode(Node left, Node right) {
-			this.left = left;
-			this.right = right;
+		AndNode(Node l, Node r) {
+			this.left = l;
+			this.right = r;
 		}
 
 		@Override
@@ -157,10 +157,10 @@ public class AST {
 
 	public static class NotNode extends Node {
 
-		final Node expression;
+		final Node exp;
 
-		NotNode(Node expression) {
-			this.expression = expression;
+		NotNode(Node exp) {
+			this.exp = exp;
 		}
 
 		@Override
@@ -183,9 +183,9 @@ public class AST {
 		final Node left;
 		final Node right;
 
-		DivNode(Node left, Node right) {
-			this.left = left;
-			this.right = right;
+		DivNode(Node l, Node r) {
+			this.left = l;
+			this.right = r;
 		}
 
 		@Override
@@ -208,9 +208,9 @@ public class AST {
 		final Node left;
 		final Node right;
 
-		MinusNode(Node left, Node right) {
-			this.left = left;
-			this.right = right;
+		MinusNode(Node l, Node r) {
+			this.left = l;
+			this.right = r;
 		}
 
 		@Override
@@ -238,15 +238,16 @@ public class AST {
 		final String objectId;
 		final String methodId;
 
-		int nestingLevel;
-		STentry symbolTableEntry;
-		STentry methodEntry;
-		final List<Node> argumentsList;
+		int nl; //nesting level
+		STentry entry;
 
-		public ClassCallNode(String objectId, String methodId, List<Node> arguments) {
+		STentry methodEntry;
+		final List<Node> argList;
+
+		public ClassCallNode(String objectId, String methodId, List<Node> argList) {
 			this.objectId = objectId;
 			this.methodId = methodId;
-			this.argumentsList = arguments;
+			this.argList = argList; //arguments list
 		}
 
 		@Override
@@ -362,20 +363,20 @@ public class AST {
 	public static class MethodNode extends DecNode {
 
 		final String id;
-		final TypeNode returnType;
-		final List<ParNode> parametersList;
-		final List<DecNode> declarationsList;
-		final Node expression;
+		final TypeNode retType;
+		final List<ParNode> parList;
+		final List<DecNode> decList;
+		final Node exp;
 		int offset;
-		String label;
+		String label; //code generation
 
-		MethodNode(String id, TypeNode returnType, List<ParNode> parametersList, List<DecNode> declarationsList, Node expression) {
+		MethodNode(String id, TypeNode retType, List<ParNode> parList, List<DecNode> decList, Node exp) {
 			this.id = id;
-			this.returnType = returnType;
-			this.parametersList = parametersList;
-			this.declarationsList = declarationsList;
-			this.expression = expression;
-			this.type = new ArrowTypeNode(this.parametersList.stream().map(ParNode::getType).collect(Collectors.toList()), this.returnType);
+			this.retType = retType;
+			this.parList = parList;
+			this.decList = decList;
+			this.exp = exp;
+			this.type = new ArrowTypeNode(this.parList.stream().map(ParNode::getType).collect(Collectors.toList()), this.retType);
 		}
 
 		@Override
@@ -386,10 +387,10 @@ public class AST {
 
 	public static class MethodTypeNode extends TypeNode {
 
-		final ArrowTypeNode functionalType;//è fun TODO
+		final ArrowTypeNode fun;//è function type
 
-		public MethodTypeNode( ArrowTypeNode functionalType) {
-			this.functionalType = functionalType;
+		public MethodTypeNode( ArrowTypeNode fun) {
+			this.fun = fun;
 		}
 
 		@Override
@@ -400,13 +401,13 @@ public class AST {
 
 	public static class NewNode extends Node {
 
-		STentry classSymbolTableEntry;
-		final String id;
-		List<Node> argumentsList;
+		STentry classEntry;
+		final String id; //id della classe
+		List<Node> argList;
 
-		NewNode(String id, List<Node> arguments) {
+		NewNode(String id, List<Node> argList) {
 			this.id = id;
-			this.argumentsList = Collections.unmodifiableList(arguments);
+			this.argList = Collections.unmodifiableList(argList);
 		}
 
 		@Override

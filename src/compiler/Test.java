@@ -41,7 +41,7 @@ public class Test {
 
     	System.out.println("Checking Types.");
     	try {
-    		TypeCheckEASTVisitor typeCheckVisitor = new TypeCheckEASTVisitor(true);
+    		TypeCheckEASTVisitor typeCheckVisitor = new TypeCheckEASTVisitor();
     		TypeNode mainType = typeCheckVisitor.visit(ast);
     		System.out.print("Type of main program expression is: ");
     		new PrintEASTVisitor().visit(mainType);

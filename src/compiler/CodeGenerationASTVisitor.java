@@ -207,7 +207,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		String l2 = freshLabel();
 		//nego l'espressione quindi se è uguale a 0 allora andrò all'etichetta l1 e faccio push di 1 altrimenti di 0
 		return nlJoin(
-				visit(n.expression),
+				visit(n.exp),
 				"push 0",
 				"beq "+l1,
 				"push 0",
@@ -338,12 +338,12 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		}
 		String declarationListCode = null;
 		String popDeclarationsList = null;
-		for (Node declaration : node.declarationsList) {
+		for (Node declaration : node.decList) {
 			declarationListCode = nlJoin(declarationListCode, visit(declaration));
 			popDeclarationsList = nlJoin(popDeclarationsList, "pop");
 		}
 		String popParametersList = null;
-		for (int i = 0; i < node.parametersList.size(); i++) {
+		for (int i = 0; i < node.parList.size(); i++) {
 			popParametersList = nlJoin(popParametersList, "pop");
 		}
 
@@ -355,7 +355,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 						"cfp", // set $fp to $sp value
 						"lra", // load $ra value
 						declarationListCode, // generate code for local declarations (they use the new $fp!!!)
-						visit(node.expression), // generate code for function body expression
+						visit(node.exp), // generate code for function body expression
 						"stm", // set $tm to popped value (function result)
 						popDeclarationsList, // remove local declarations from stack
 						"sra", // set $ra to popped value
@@ -409,14 +409,14 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			printNode(node, node.id);
 		}
 		String putArgumentsOnStack = null;
-		for(var argument : node.argumentsList) {
+		for(var argument : node.argList) {
 			putArgumentsOnStack = nlJoin(
 					putArgumentsOnStack,
 					visit(argument)
 			);
 		}
 		String loadArgumentsOnHeap = null;
-		for (var i = 0; i < node.argumentsList.size(); i++) {
+		for (var i = 0; i < node.argList.size(); i++) {
 			loadArgumentsOnHeap = nlJoin(
 					loadArgumentsOnHeap,
 					"lhp",
@@ -431,7 +431,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 				putArgumentsOnStack,
 				loadArgumentsOnHeap,
 				"push " + ExecuteVM.MEMSIZE,
-				"push " + node.classSymbolTableEntry.offset,
+				"push " + node.classEntry.offset,
 				"add",
 				"lw", // get dispatch pointer
 				"lhp",
@@ -449,10 +449,10 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		if (print) printNode(n,n.objectId + "." + n.methodId);
 
 		String argCode = null, getAR = null;
-		for (int i=n.argumentsList.size()-1;i>=0;i--) {
-			argCode = nlJoin(argCode, visit(n.argumentsList.get(i)));
+		for (int i = n.argList.size()-1; i>=0; i--) {
+			argCode = nlJoin(argCode, visit(n.argList.get(i)));
 		}
-		for (int i = 0;i<n.nestingLevel-n.symbolTableEntry.nl;i++) {
+		for (int i = 0; i<n.nl -n.entry.nl; i++) {
 			getAR=nlJoin(getAR,"lw"); // recupero object pointer risalendo della differenza di nl
 		}
 
@@ -461,7 +461,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 				argCode, // generate code for argument expressions in reversed order
 				"lfp", getAR, // retrieve address of frame containing "id" declaration
 				// by following the static chain (of Access Links)
-				"push "+n.symbolTableEntry.offset, "add", // compute address of "id" declaration
+				"push "+n.entry.offset, "add", // compute address of "id" declaration
 				"lw", // load address of "id" function
 				"stm", // set $tm to popped value (with the aim of duplicating top of stack)
 				"ltm", // load Access Link (pointer to frame of function "id" declaration)

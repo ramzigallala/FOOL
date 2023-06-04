@@ -63,7 +63,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		if (print) printVarAndProdName(c);
 		return new ProgNode(visit(c.exp()));
 	}
-
+	//leggo la definizione della classe e creo un nodo classe
 	@Override
 	public Node visitCldec(CldecContext c) {
 		if (print) {
@@ -72,55 +72,65 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		String classID = c.ID(0).getText();
 		String superID = null;
 		List<FieldNode> fields = new ArrayList<>();
-
+		//prendiamo l'id della super classe
 		if (c.EXTENDS() != null) {
 			superID = c.ID(1).getText();
 		}
 		int extendingPad = c.EXTENDS() != null ? 1 : 0;
+		//nel caso in cui non c'è una super classe partiremo da 1 altrimenti da 2 poiche id 1 è della super classe
+		//questo for è per i fields della classe
 		IntStream.range(1 + extendingPad, c.ID().size()).forEach(i -> {
 			var field = new FieldNode(c.ID(i).getText(), (TypeNode) visit(c.type(i - (1 + extendingPad))));
 			field.setLine(c.ID(i).getSymbol().getLine());
 			fields.add(field);
 		});
+		//questo è per i metodi
 		List<MethodNode> methods = new ArrayList<>();
 		for (var method : c.methdec()) {
 			methods.add((MethodNode) visit(method));
 		}
+		//alla fine creo la classe
 		var node = new ClassNode(classID, superID, fields, methods);
 		node.setLine(c.ID(0).getSymbol().getLine());
 		return node;
 	}
 
+	//leggo la definizione del metodo e creo un nodo metodo
 	@Override
 	public Node visitMethdec(MethdecContext c) {
 		if (print) {
 			printVarAndProdName(c);
 		}
 		String methodId = c.ID(0).getText();
-		TypeNode returnType = (TypeNode) visit(c.type(0));
-		List<ParNode> parameters = new ArrayList<>();
+		TypeNode retType = (TypeNode) visit(c.type(0));
+		//mi salvo i parametri del metodo
+		List<ParNode> parList = new ArrayList<>();
 		IntStream.range(1, c.ID().size()).forEach(i -> {
-			parameters.add(new ParNode(c.ID(i).getText(), (TypeNode) visit(c.type(i))));
+			parList.add(new ParNode(c.ID(i).getText(), (TypeNode) visit(c.type(i))));
 		});
-		List<DecNode> declarations = new ArrayList<>();
+		//mi salvo le dichiarazioni del metodo
+		List<DecNode> decList = new ArrayList<>();
 		for (var declaration : c.dec()) {
-			declarations.add((DecNode) visit(declaration));
+			decList.add((DecNode) visit(declaration));
 		}
-		var node = new MethodNode(methodId, returnType, parameters, declarations, visit(c.exp()));
+		//creo un nodo di tipologia metodo
+		var node = new MethodNode(methodId, retType, parList, decList, visit(c.exp()));
 		node.setLine(c.ID(0).getSymbol().getLine());
 		return node;
 	}
-
+	//per quando facciamo new classe.
 	@Override
 	public Node visitNew(NewContext c) {
 		if (print) {
 			printVarAndProdName(c);
 		}
-		List<Node> argumentsList = new ArrayList<>();
+		//mi salvo gli argomenti definiti
+		List<Node> argList = new ArrayList<>();
 		for (var i = 0; i < c.exp().size(); i++) {
-			argumentsList.add(visit(c.exp(i)));
+			argList.add(visit(c.exp(i)));
 		}
-		var node = new NewNode(c.ID().getText(), argumentsList);
+		//creo un nodo new e gli do il riferimento alla classe, tramite id, e gli argomenti definiti
+		var node = new NewNode(c.ID().getText(), argList);
 		node.setLine(c.ID().getSymbol().getLine());
 		return node;
 	}
@@ -300,6 +310,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		if (print) {
 			printVarAndProdName(c);
 		}
+		//ci salviamo l'id della classe come campo
 		var node = new RefTypeNode(c.ID().getText());
 		node.setLine(c.ID().getSymbol().getLine());
 		return node;
@@ -320,11 +331,15 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		if (print) {
 			printVarAndProdName(c);
 		}
+		//argomenti chiamata metodo
 		List<Node> arglist = new ArrayList<>();
 		for (ExpContext arg : c.exp()) {
 			arglist.add(visit(arg));
 		}
-		Node node = new ClassCallNode(c.ID(0).getText(), c.ID(1).getText(), arglist);
+		//nodo di tipologia dot call node.
+		Node node = new ClassCallNode(c.ID(0).getText(), //id dell'ogetto
+				c.ID(1).getText(), //metodo id
+				arglist); //argomenti della chiamata
 		node.setLine(c.ID(1).getSymbol().getLine());
 		return node;
 	}
@@ -334,7 +349,9 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		if (print) {
 			printVarAndProdName(c);
 		}
-		return new EmptyNode();
+		Node n = new EmptyNode();
+		n.setLine(c.NULL().getSymbol().getLine());
+		return n;
 	}
 
 }

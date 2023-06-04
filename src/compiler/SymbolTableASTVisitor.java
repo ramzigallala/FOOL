@@ -159,7 +159,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		if (print) {
 			printNode(node);
 		}
-		visit(node.expression);
+		visit(node.exp);
 		return null;
 	}
 
@@ -245,38 +245,40 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		if (print) {
 			printNode(node);
 		}
+		//se non eredita rimane vuoto
 		var classType = new ClassTypeNode(new ArrayList<>(), new ArrayList<>());
-		/*
-		 * Class is extending
-		 */
+
+		//controllo se la classe eredita da un'altra e se tale super classe esiste
 		if (node.superID != null && classTable.containsKey(node.superID)) {
-			//entro qua quando eredito da un'altra classe, su cui non ho fatto overriding
+			//entro qua quando eredito da un'altra classe
 			//prendo la entry, il riferimento alla super classe
 			STentry superClassEntry = symTable.get(0).get(node.superID);
+			//setto la superclasse del nodo
+			node.superClassEntry = superClassEntry;
 			//grazie al riferimento copio tutto il contenuto del nodo
 			classType = new ClassTypeNode(
 					new ArrayList<>(((ClassTypeNode) superClassEntry.type).allFields),
 					new ArrayList<>(((ClassTypeNode) superClassEntry.type).allMethods)
 			);
-			//setto la superclasse del nodo
-			node.superClassEntry = superClassEntry;
+
 		} else if (node.superID != null) {
 			System.out.println("Extending class id " + node.superID + " at line " + node.getLine() + " is not declared");
 		}
+		//creo la STEntry
 		STentry entry = new STentry(0, classType, decOffset--);
-		node.type = classType;//gli diamo il tipo della superclasse nel caso ci sia
+		node.type = classType;//gli diamo il tipo della superclasse nel caso ci sia, altrimenti un nuovo vuoto
+
 		Map<String, STentry> globalScopeTable = symTable.get(0);
-		//aggiungo il nodo alla symbolTable
+		//aggiungo il nodo alla symbolTable, se non riesco significa che era già stato dichiarato
 		if (globalScopeTable.put(node.id, entry) != null) {
 			System.out.println("Class id " + node.id + " at line " + node.getLine() + " already declared");
 			stErrors++;
 		}
-		/*
-		 * Add a the scope table for the id of the class.
-		 * Table should be added for both symbol table and class table.
-		 */
+		//livello dentro la dichiarazione della classe
 		nestingLevel++;
+
 		onClassVisitScope = new HashSet<>(); //spiegata in riga 15
+
 		//la virtual table contiene tutte le entry STentry dentro la classe. esempio pag 21
 		Map<String, STentry> virtualTable = new HashMap<>();
 		//copiamo la virtual table relativa al nome della super classe. quindi quella da cui eredita
@@ -285,21 +287,17 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 			//se esiste una super classe allora aggiungo la sua virtual table alla mia
 			virtualTable.putAll(superClassVirtualTable);
 		}
-		//aggiungo sia alla classTable che alla sybleTable la virtual table
+		//aggiungo sia alla classTable che alla symbolTable la virtual table
 		classTable.put(node.id, virtualTable);
 		symTable.add(virtualTable);
-		/*
-		 * Setting the fieldOffset for the extending class
-		 */
+
+		//caso in cui non c'è overriding dei campi
 		int fieldOffset = -1;
 		if (node.superID != null) {
-			//preservo l'offset che era nella vecchia STentry
-			fieldOffset = -((ClassTypeNode) symTable.get(0).get(node.superID).type).allFields.size()-1;
+			//preservo l'offset che era nella super classe. Prendo l'offset dei campi
+			fieldOffset = -classType.allFields.size()-1;
 		}
-		/*
-		 * Handle field declaration.
-		 */
-
+		//una volta settato l'offset dei campi lavoro su di essi
 		for (var field : node.fields) {
 			if (onClassVisitScope.contains(field.id)) { //effettuo il controllo per i campi. spiegato a linea 15 il motivo
 				System.out.println(
@@ -311,12 +309,14 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 			//prendo in considerazione i campi
 			var overriddenFieldEntry = virtualTable.get(field.id);
 			STentry fieldEntry;
+			//entro dentro l'if nel caso in cui trattiamo un campo field override
 			if (overriddenFieldEntry != null && !(overriddenFieldEntry.type instanceof MethodTypeNode)) {
 				//aggiorno la classTypeNode. In questo caso prendo in considerazione i campi field che sono stati override
 				fieldEntry = new STentry(nestingLevel, field.getType(), overriddenFieldEntry.offset);
 				//una volta che mi sono creato la entry per il field lo inserisco nella classType
 				classType.allFields.set(-fieldEntry.offset - 1, fieldEntry.type);
 			} else {
+				//se sono qui non sto facendo override
 				//aggiorno la classTypeNode. In questo caso prendo in cosiderazione i campi non override
 				fieldEntry = new STentry(nestingLevel, field.getType(), fieldOffset--);
 				classType.allFields.add(-fieldEntry.offset - 1, fieldEntry.type);
@@ -325,20 +325,19 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 					stErrors++;
 				}
 			}
-			/*
-			 * Add field id in symbol(virtual) table
-			 */
+			//aggiungo i campi alla virtual table
 			virtualTable.put(field.id, fieldEntry);
-			field.offset = fieldEntry.offset; //inserito per migliorare efficienza del type checking
+			field.offset = fieldEntry.offset; //inserito per migliorare efficienza del type checking, cosi da non ricontrollare due volte il field
 		}
 		int currentDecOffset = decOffset;
-		// method declarationOffset starts from 0
-		int previousNestingLevelDeclarationOffset = decOffset;
+		// memorizza il contatore per l'offset delle dichiarazioni al nesting level precedente
+		int prevNLDecOffset = decOffset;
+		//caso in cui non c'è override
 		decOffset = 0;
 		//faccio quello che ho fatto per i campi ma per i metodi
 		if (node.superID != null) {
-			//caso in cui abbia una super classe prendo l'ofset relativo ad essa che verrà poi utilizzato quando si faà l visit del metodo
-			decOffset = ((ClassTypeNode) symTable.get(0).get(node.superID).type).allMethods.size();
+			//caso in cui abbia una super classe prendo l'offset relativo ad essa che verrà poi utilizzato quando si fa la visit del metodo
+			decOffset = classType.allMethods.size();
 		}
 		for (var method : node.methods) {
 			if (onClassVisitScope.contains(method.id)) { //effettuo il controllo per i metodi anche. Motivo come per i campi spiegato a linea 15
@@ -347,17 +346,17 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 				);
 				stErrors++;
 			}
-			//visito il metodo
+			//visito il metodo, all'interno della visita del metodo farò gli stessi controlli fatti per i fields riguardanti override
 			visit(method);
 			//aggiungo la virtual table del metodo, di cui ho appenna effettuato la visita, al classType
 			classType.allMethods.add(
 					method.offset,
-					((MethodTypeNode) virtualTable.get(method.id).type).functionalType
+					((MethodTypeNode) virtualTable.get(method.id).type).fun //la prendo perché in method node l'ho inserita
 			);
 		}
-		decOffset = currentDecOffset; // restores the previous declaration offset
-		symTable.remove(nestingLevel--);
-		decOffset = previousNestingLevelDeclarationOffset;
+		decOffset = currentDecOffset; //poiché dentro la visita del metodo vado a cambiare il decoffset dopo lo vado a riprestinare
+		symTable.remove(nestingLevel--); //rimuovere la hashmap corrente poiche' esco dallo scope
+		decOffset = prevNLDecOffset; // rimetto il vecchio offset
 		return null;
 	}
 
@@ -366,14 +365,15 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		if (print) {
 			printNode(node);
 		}
-		STentry entry = stLookup(node.objectId);
+		STentry entry = stLookup(node.objectId);//objectid messo in astgeneration
 		if (entry == null) {
 			System.out.println("Object id " + node.objectId + " at line " + node.getLine() + " not declared");
 			stErrors++;
 		} else if (entry.type instanceof RefTypeNode) {
-			node.symbolTableEntry = entry;
-			node.nestingLevel = nestingLevel;
-			//cerco nella virtual table la MethodEntry relativa la nodo
+			node.entry = entry;
+			node.nl = nestingLevel;
+			//cerco nella virtual table la MethodEntry relativa al nodo
+			// metodo lo troviammo nella ClassTable -> VirtualTable della classe di entry
 			node.methodEntry = classTable.get(((RefTypeNode) entry.type).id).get(node.methodId);
 			if (node.methodEntry == null) {
 				System.out.println(
@@ -382,7 +382,9 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 				stErrors++;
 			}
 		}
-		for (Node argument : node.argumentsList) {
+
+		//infine visito gli argomenti
+		for (Node argument : node.argList) {
 			visit(argument);
 		}
 		return null;
@@ -391,18 +393,20 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	@Override
 	public Void visitNode(MethodNode node) {
 		if (print) printNode(node);
+		//prendo la virtual table della classe
 		Map<String, STentry> currentScopeTable = symTable.get(nestingLevel);
-		List<TypeNode> parametersTypes = new ArrayList<>();
-		for (ParNode parameter : node.parametersList) {
-			parametersTypes.add(parameter.getType());
+		//gestisco i tipi dei parametri
+		List<TypeNode> parTypes = new ArrayList<>();
+		for (ParNode par : node.parList) {
+			parTypes.add(par.getType());
 		}
-		/*
-		 * Insert ID into the symbolTable.
-		 */
-		//come per FunNode solo che in questo caso bisogna controllare i metodi overriden
+		//faccio quello che ho fatto per i field in classNode
+		//controllo se è un override
 		var overriddenMethodEntry = currentScopeTable.get(node.id);
-		final TypeNode methodType = new MethodTypeNode(new ArrowTypeNode(parametersTypes, node.returnType));
+		//definisco un nodo di tipo metodo
+		final TypeNode methodType = new MethodTypeNode(new ArrowTypeNode(parTypes, node.retType));
 		STentry entry = null;
+		//se è un override faccio come per i field e creo la entry
 		if (overriddenMethodEntry != null && overriddenMethodEntry.type instanceof MethodTypeNode) {
 			//creo una nuova entry con il riferimento al offset del metodo della super classe
 			entry = new STentry(nestingLevel, methodType, overriddenMethodEntry.offset);
@@ -414,33 +418,33 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 				stErrors++;
 			}
 		}
-		node.offset = entry.offset;
-		currentScopeTable.put(node.id, entry);
-		/*
-		 * Create a new table for the method.
-		 */
+		node.offset = entry.offset; //definisco il giusto offset nel caso ad esempio ci sia override
+		currentScopeTable.put(node.id, entry); //inserisco la entry nella table così che ad esempio class node quando tratta i metodi possa recuperarla
+
+		//creiamo una nuova tabella per il metodo
+		//entriamo nel nesting level del metodo
+		//simile a funnode
 		nestingLevel++;
 		Map<String, STentry> methodScopeTable = new HashMap<>();
 		symTable.add(methodScopeTable);
-		int previousNestingLeveleDeclarationOffset = decOffset;
+		int prevNLDecOffset = decOffset;
 		decOffset = -2;
-		int parameterOffset = 1;
-		for (ParNode parameter : node.parametersList) {
-			final STentry parameterEntry = new STentry(nestingLevel, parameter.getType(), parameterOffset++);
-			if (methodScopeTable.put(parameter.id, parameterEntry) != null) {
-				System.out.println("Par id " + parameter.id + " at line " + node.getLine() + " already declared");
+		int parOffset = 1;
+		for (ParNode par : node.parList) {
+			final STentry parEntry = new STentry(nestingLevel, par.getType(), parOffset++);
+			if (methodScopeTable.put(par.id, parEntry) != null) {
+				System.out.println("Par id " + par.id + " at line " + node.getLine() + " already declared");
 				stErrors++;
 			}
 		}
-		for (Node declaration : node.declarationsList) {
-			visit(declaration);
+		for (Node dec : node.decList) {
+			visit(dec);
 		}
-		visit(node.expression);
-		/*
-		 * Remove the current nesting level symbolTable.
-		 */
+		visit(node.exp);
+		//rimuovo la tabella(hashmap) corrente perché esco dallo scope
 		symTable.remove(nestingLevel--);
-		decOffset = previousNestingLeveleDeclarationOffset;
+		decOffset = prevNLDecOffset; // restores counter for offset of declarations at previous nesting level
+
 		return null;
 	}
 
@@ -449,13 +453,15 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		if (print) {
 			printNode(node);
 		}
+		// controllo che ID sia in classTable
 		if (!classTable.containsKey(node.id)) {
 			System.out.println("Class id " + node.id + " was not declared");
 			stErrors++;
 		}
-		node.classSymbolTableEntry = symTable.get(0).get(node.id);
-		for (var argument : node.argumentsList) {
-			visit(argument);
+		//prendo la symbol table della classe
+		node.classEntry = symTable.get(0).get(node.id);
+		for (var arg : node.argList) {
+			visit(arg);
 		}
 		return null;
 	}
